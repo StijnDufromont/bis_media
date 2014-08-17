@@ -1,0 +1,130 @@
+<?php
+
+// @todo settings form permissions
+
+/**
+ * Implements hook_init().
+ */
+function bis_media_init() {
+  // debug code here
+}
+
+/**
+ * Implements hook_menu().
+ */
+function bis_media_menu() {
+  $items = array();
+  
+  $items['admin/config/system/bis'] = array(
+    'title' => t('21bis settings'),
+    'description' => t('Additional settings for 21bis.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bis_media_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  return $items;
+}
+
+/**
+ * Implements hook_media_browser_plugin_info().
+ */
+function bis_media_media_browser_plugin_info() {
+  $info['bis'] = array(
+    'title' => t('21bis Video'),
+    'class' => 'MediaBisBrowser',
+  );
+
+  return $info;
+}
+
+function bis_media_file_formatter_info() {
+  $formatters['bis_media_video'] = array(
+    'label' => t('21bis Video'),
+    'file types' => array('video'),
+    'default settings' => array(),
+    'view callback' => 'bis_media_file_formatter_video_view',
+    'mime types' => array('video/bis')
+  );
+  
+  return $formatters;
+}
+
+function bis_media_file_formatter_video_view($file, $display, $langcode) {
+  $element = array();
+  
+  return $element;
+}
+
+/**
+ *
+ */
+function bis_media_form($form, &$form_state = array()) {
+  $form['filename'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Filename'),
+    '#required' => TRUE,
+  );
+  
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  
+  return $form;
+}
+
+/**
+ *
+ */
+function bis_media_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  
+  $path = variable_get('21bis_streaming_url', '');
+
+  $request = 'rtmp://';
+  $request = $request . $path . $values['filename'];
+  
+  $response = drupal_http_request($request);
+  
+  watchdog('debug response', '<pre>' . print_r($response, true) . '</pre>');
+}
+
+/**
+ *
+ */
+function bis_media_form_submit($form, &$form_state) {
+  global $user;
+  
+  $values = $form_state['values'];
+  
+  $file = new stdClass();
+  
+  $file->uid = $user->uid;
+  $file->filename = $values['filename'];
+  $file->uri = 'rtmp://' . $values['filename'];
+  $file->filemime = 'video/bis';
+  $file->filesize = 0;
+  $file->status = 1;
+  $file->type = 'video';
+  
+  file_save($file);
+}
+
+/**
+ *
+ */
+function bis_media_settings_form($form, &$form_state = array()) {
+  $form = array();
+  
+  $form['21bis_streaming_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Streaming URL'),
+    '#description' => t(''),
+    '#required' => TRUE,
+    '#default_value' => variable_get('21bis_streaming_url', '') ? variable_get('21bis_streaming_url') : '',
+  );
+  
+  return system_settings_form($form);
+}

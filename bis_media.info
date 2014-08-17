@@ -1,0 +1,6 @@
+name = 21bis Media integration
+description = Provides media integration for the 21bis video streaming.
+package = Custom
+core = 7.x
+
+files[] = includes/MediaBisBrowser.inc
